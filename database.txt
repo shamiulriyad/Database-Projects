@@ -1,0 +1,584 @@
+1. users
+Field	Type	Notes
+id	BIGINT PK	
+role	VARCHAR CHECK (role IN ('student','instructor','admin'))	
+name	VARCHAR	
+email	VARCHAR UNIQUE	
+password_hash	VARCHAR	
+status	VARCHAR CHECK (status IN ('active','suspended','pending'))	
+created_at	TIMESTAMP	
+updated_at	TIMESTAMP	
+created_by	BIGINT FK → users(id)	
+updated_by	BIGINT FK → users(id)	
+deleted_at	TIMESTAMP	
+2. courses
+Field	Type
+id BIGINT PK	
+instructor_id BIGINT FK → users(id)	
+title VARCHAR	
+description TEXT	
+language VARCHAR	
+level VARCHAR CHECK(level IN ('beginner','intermediate','advanced'))	
+is_published BOOLEAN	
+created_at TIMESTAMP	
+updated_at TIMESTAMP	
+created_by BIGINT	
+updated_by BIGINT	
+deleted_at TIMESTAMP	
+3. enrollments
+Field	Type
+id BIGINT PK	
+user_id BIGINT FK → users(id)	
+course_id BIGINT FK → courses(id)	
+status VARCHAR CHECK(status IN ('active','completed','cancelled'))	
+enrolled_on DATE	
+completed_on DATE	
+progress DECIMAL(5,2)	
+created_at TIMESTAMP	
+updated_at TIMESTAMP	
+deleted_at TIMESTAMP	
+
+UNIQUE(user_id, course_id)
+
+4. modules
+Field	Type
+id BIGINT PK	
+course_id BIGINT FK → courses(id)	
+title VARCHAR	
+position INT	
+description TEXT	
+created_at TIMESTAMP	
+updated_at TIMESTAMP	
+created_by BIGINT	
+updated_by BIGINT	
+deleted_at TIMESTAMP	
+
+UNIQUE(course_id, position)
+
+5. materials
+Field	Type
+id BIGINT PK	
+module_id BIGINT FK → modules(id)	
+kind VARCHAR CHECK(kind IN ('video','pdf','slide','html','audio','other'))	
+title VARCHAR	
+description TEXT	
+storage_url VARCHAR	
+mime_type VARCHAR	
+size_bytes BIGINT	
+requires_auth BOOLEAN	
+position INT	
+created_at TIMESTAMP	
+updated_at TIMESTAMP	
+created_by BIGINT	
+updated_by BIGINT	
+deleted_at TIMESTAMP	
+6. video_streams
+Field	Type
+id BIGINT PK	
+material_id BIGINT FK → materials(id)	
+provider VARCHAR	
+stream_url VARCHAR	
+playback_policy VARCHAR	
+duration_seconds INT	
+created_at TIMESTAMP	
+updated_at TIMESTAMP	
+deleted_at TIMESTAMP	
+7. quizzes
+Field	Type
+id BIGINT PK	
+module_id BIGINT FK → modules(id)	
+title VARCHAR	
+time_limit_seconds INT	
+attempts_allowed INT	
+shuffle_questions BOOLEAN	
+pass_score DECIMAL	
+created_at TIMESTAMP	
+updated_at TIMESTAMP	
+created_by BIGINT	
+updated_by BIGINT	
+deleted_at TIMESTAMP	
+8. questions
+Field	Type
+id BIGINT PK	
+quiz_id BIGINT FK → quizzes(id)	
+type VARCHAR CHECK(type IN ('mcq','multi_select','short_text','long_text','numeric'))	
+prompt TEXT	
+points DECIMAL	
+position INT	
+created_at TIMESTAMP	
+updated_at TIMESTAMP	
+deleted_at TIMESTAMP	
+9. choices
+Field	Type
+id BIGINT PK	
+question_id BIGINT FK → questions(id)	
+text TEXT	
+is_correct BOOLEAN	
+position INT	
+created_at TIMESTAMP	
+updated_at TIMESTAMP	
+deleted_at TIMESTAMP	
+10. quiz_attempts
+Field	Type
+id BIGINT PK	
+quiz_id BIGINT FK → quizzes(id)	
+user_id BIGINT FK → users(id)	
+started_at TIMESTAMP	
+submitted_at TIMESTAMP	
+score DECIMAL	
+status VARCHAR CHECK(status IN ('in_progress','submitted','graded','abandoned'))	
+created_at TIMESTAMP	
+updated_at TIMESTAMP	
+deleted_at TIMESTAMP	
+11. attempt_answers
+Field	Type
+id BIGINT PK	
+attempt_id BIGINT FK → quiz_attempts(id)	
+question_id BIGINT FK → questions(id)	
+answer_text TEXT	
+selected_choice_id BIGINT FK → choices(id)	
+is_correct BOOLEAN	
+awarded_points DECIMAL	
+created_at TIMESTAMP	
+updated_at TIMESTAMP	
+deleted_at TIMESTAMP	
+
+CHECK (answer_text IS NOT NULL OR selected_choice_id IS NOT NULL)
+
+12. assignments
+Field	Type
+id BIGINT PK	
+module_id BIGINT FK → modules(id)	
+title VARCHAR	
+instructions TEXT	
+due_at TIMESTAMP	
+max_points DECIMAL	
+created_at TIMESTAMP	
+updated_at TIMESTAMP	
+created_by BIGINT	
+updated_by BIGINT	
+deleted_at TIMESTAMP	
+13. submissions
+Field	Type
+id BIGINT PK	
+assignment_id BIGINT FK → assignments(id)	
+user_id BIGINT FK → users(id)	
+submitted_at TIMESTAMP	
+storage_url VARCHAR	
+grade DECIMAL	
+feedback TEXT	
+status VARCHAR CHECK(status IN ('submitted','graded','late','resubmitted'))	
+created_at TIMESTAMP	
+updated_at TIMESTAMP	
+deleted_at TIMESTAMP	
+
+UNIQUE(assignment_id, user_id) (if needed)
+
+14. certificates
+Field	Type
+id BIGINT PK	
+user_id BIGINT FK → users(id)	
+course_id BIGINT FK → courses(id)	
+serial VARCHAR	
+issued_at TIMESTAMP	
+status VARCHAR CHECK(status IN ('issued','revoked'))	
+created_at TIMESTAMP	
+deleted_at TIMESTAMP	
+
+UNIQUE(user_id, course_id)
+
+15. discussion_threads
+Field	Type
+id BIGINT PK	
+course_id BIGINT FK → courses(id)	
+module_id BIGINT FK → modules(id)	
+title VARCHAR	
+is_locked BOOLEAN	
+created_at TIMESTAMP	
+updated_at TIMESTAMP	
+deleted_at TIMESTAMP	
+created_by BIGINT FK → users(id)	
+16. posts
+Field	Type
+id BIGINT PK	
+thread_id BIGINT FK → discussion_threads(id)	
+author_id BIGINT FK → users(id)	
+body TEXT	
+created_at TIMESTAMP	
+updated_at TIMESTAMP	
+deleted_at TIMESTAMP	
+
+INDEX(thread_id, created_at)
+
+17. notifications
+Field	Type
+id BIGINT PK	
+user_id BIGINT FK → users(id)	
+type VARCHAR CHECK(type IN ('system','course','assignment','message'))	
+message TEXT	
+is_read BOOLEAN	
+created_at TIMESTAMP	
+deleted_at TIMESTAMP	
+18. payments
+Field	Type
+id BIGINT PK	
+user_id BIGINT FK → users(id)	
+course_id BIGINT FK → courses(id)	
+amount DECIMAL	
+currency VARCHAR	
+status VARCHAR CHECK(status IN ('pending','completed','failed','refunded'))	
+payment_date TIMESTAMP	
+provider VARCHAR	
+transaction_id VARCHAR	
+created_at TIMESTAMP	
+deleted_at TIMESTAMP	
+19. analytics_events
+Field	Type
+id BIGINT PK	
+user_id BIGINT FK → users(id)	
+event_type VARCHAR	
+event_data JSONB	
+created_at TIMESTAMP	
+
+INDEX(event_type, created_at)
+
+20. user_relationships
+Field	Type
+id BIGINT PK	
+user_id BIGINT FK → users(id)	
+related_user_id BIGINT FK → users(id)	
+relationship_type VARCHAR CHECK(relationship IN ('follower','following','blocked','colleague'))	
+created_at TIMESTAMP	
+
+UNIQUE(user_id, related_user_id)
+
+
+
+
+
+
+
+
+
+
+
+-- ============================================
+-- USERS TABLE
+-- ============================================
+CREATE TABLE users (
+    id BIGSERIAL PRIMARY KEY,
+    role VARCHAR(20) CHECK (role IN ('student','instructor','admin')),
+    name VARCHAR(255),
+    email VARCHAR(255) UNIQUE,
+    password_hash VARCHAR(255),
+    status VARCHAR(20) CHECK (status IN ('active','suspended','pending')),
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP,
+    created_by BIGINT REFERENCES users(id),
+    updated_by BIGINT REFERENCES users(id),
+    deleted_at TIMESTAMP
+);
+
+-- ============================================
+-- COURSES
+-- ============================================
+CREATE TABLE courses (
+    id BIGSERIAL PRIMARY KEY,
+    instructor_id BIGINT REFERENCES users(id),
+    title VARCHAR(255),
+    description TEXT,
+    language VARCHAR(100),
+    level VARCHAR(20) CHECK (level IN ('beginner','intermediate','advanced')),
+    is_published BOOLEAN,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP,
+    created_by BIGINT REFERENCES users(id),
+    updated_by BIGINT REFERENCES users(id),
+    deleted_at TIMESTAMP
+);
+
+-- ============================================
+-- ENROLLMENTS
+-- ============================================
+CREATE TABLE enrollments (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT REFERENCES users(id),
+    course_id BIGINT REFERENCES courses(id),
+    status VARCHAR(20) CHECK (status IN ('active','completed','cancelled')),
+    enrolled_on DATE,
+    completed_on DATE,
+    progress DECIMAL(5,2),
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP,
+    deleted_at TIMESTAMP,
+    UNIQUE(user_id, course_id)
+);
+
+-- ============================================
+-- MODULES
+-- ============================================
+CREATE TABLE modules (
+    id BIGSERIAL PRIMARY KEY,
+    course_id BIGINT REFERENCES courses(id),
+    title VARCHAR(255),
+    position INT,
+    description TEXT,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP,
+    created_by BIGINT REFERENCES users(id),
+    updated_by BIGINT REFERENCES users(id),
+    deleted_at TIMESTAMP,
+    UNIQUE(course_id, position)
+);
+
+-- ============================================
+-- MATERIALS
+-- ============================================
+CREATE TABLE materials (
+    id BIGSERIAL PRIMARY KEY,
+    module_id BIGINT REFERENCES modules(id),
+    kind VARCHAR(20) CHECK (kind IN ('video','pdf','slide','html','audio','other')),
+    title VARCHAR(255),
+    description TEXT,
+    storage_url VARCHAR(500),
+    mime_type VARCHAR(100),
+    size_bytes BIGINT,
+    requires_auth BOOLEAN,
+    position INT,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP,
+    created_by BIGINT REFERENCES users(id),
+    updated_by BIGINT REFERENCES users(id),
+    deleted_at TIMESTAMP
+);
+
+-- ============================================
+-- VIDEO STREAMS
+-- ============================================
+CREATE TABLE video_streams (
+    id BIGSERIAL PRIMARY KEY,
+    material_id BIGINT REFERENCES materials(id),
+    provider VARCHAR(50),
+    stream_url VARCHAR(500),
+    playback_policy VARCHAR(50),
+    duration_seconds INT,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP,
+    deleted_at TIMESTAMP
+);
+
+-- ============================================
+-- QUIZZES
+-- ============================================
+CREATE TABLE quizzes (
+    id BIGSERIAL PRIMARY KEY,
+    module_id BIGINT REFERENCES modules(id),
+    title VARCHAR(255),
+    time_limit_seconds INT,
+    attempts_allowed INT,
+    shuffle_questions BOOLEAN,
+    pass_score DECIMAL,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP,
+    created_by BIGINT REFERENCES users(id),
+    updated_by BIGINT REFERENCES users(id),
+    deleted_at TIMESTAMP
+);
+
+-- ============================================
+-- QUESTIONS
+-- ============================================
+CREATE TABLE questions (
+    id BIGSERIAL PRIMARY KEY,
+    quiz_id BIGINT REFERENCES quizzes(id),
+    type VARCHAR(20) CHECK (type IN ('mcq','multi_select','short_text','long_text','numeric')),
+    prompt TEXT,
+    points DECIMAL,
+    position INT,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP,
+    deleted_at TIMESTAMP
+);
+
+-- ============================================
+-- CHOICES
+-- ============================================
+CREATE TABLE choices (
+    id BIGSERIAL PRIMARY KEY,
+    question_id BIGINT REFERENCES questions(id),
+    text TEXT,
+    is_correct BOOLEAN,
+    position INT,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP,
+    deleted_at TIMESTAMP
+);
+
+-- ============================================
+-- QUIZ ATTEMPTS
+-- ============================================
+CREATE TABLE quiz_attempts (
+    id BIGSERIAL PRIMARY KEY,
+    quiz_id BIGINT REFERENCES quizzes(id),
+    user_id BIGINT REFERENCES users(id),
+    started_at TIMESTAMP,
+    submitted_at TIMESTAMP,
+    score DECIMAL,
+    status VARCHAR(20) CHECK (status IN ('in_progress','submitted','graded','abandoned')),
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP,
+    deleted_at TIMESTAMP
+);
+
+-- ============================================
+-- ATTEMPT ANSWERS
+-- ============================================
+CREATE TABLE attempt_answers (
+    id BIGSERIAL PRIMARY KEY,
+    attempt_id BIGINT REFERENCES quiz_attempts(id),
+    question_id BIGINT REFERENCES questions(id),
+    answer_text TEXT,
+    selected_choice_id BIGINT REFERENCES choices(id),
+    is_correct BOOLEAN,
+    awarded_points DECIMAL,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP,
+    deleted_at TIMESTAMP,
+    CHECK (answer_text IS NOT NULL OR selected_choice_id IS NOT NULL)
+);
+
+-- ============================================
+-- ASSIGNMENTS
+-- ============================================
+CREATE TABLE assignments (
+    id BIGSERIAL PRIMARY KEY,
+    module_id BIGINT REFERENCES modules(id),
+    title VARCHAR(255),
+    instructions TEXT,
+    due_at TIMESTAMP,
+    max_points DECIMAL,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP,
+    created_by BIGINT REFERENCES users(id),
+    updated_by BIGINT REFERENCES users(id),
+    deleted_at TIMESTAMP
+);
+
+-- ============================================
+-- SUBMISSIONS
+-- ============================================
+CREATE TABLE submissions (
+    id BIGSERIAL PRIMARY KEY,
+    assignment_id BIGINT REFERENCES assignments(id),
+    user_id BIGINT REFERENCES users(id),
+    submitted_at TIMESTAMP,
+    storage_url VARCHAR(500),
+    grade DECIMAL,
+    feedback TEXT,
+    status VARCHAR(20) CHECK (status IN ('submitted','graded','late','resubmitted')),
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP,
+    deleted_at TIMESTAMP,
+    UNIQUE(assignment_id, user_id)
+);
+
+-- ============================================
+-- CERTIFICATES
+-- ============================================
+CREATE TABLE certificates (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT REFERENCES users(id),
+    course_id BIGINT REFERENCES courses(id),
+    serial VARCHAR(255),
+    issued_at TIMESTAMP,
+    status VARCHAR(20) CHECK (status IN ('issued','revoked')),
+    created_at TIMESTAMP,
+    deleted_at TIMESTAMP,
+    UNIQUE(user_id, course_id)
+);
+
+-- ============================================
+-- DISCUSSION THREADS
+-- ============================================
+CREATE TABLE discussion_threads (
+    id BIGSERIAL PRIMARY KEY,
+    course_id BIGINT REFERENCES courses(id),
+    module_id BIGINT REFERENCES modules(id),
+    title VARCHAR(255),
+    is_locked BOOLEAN,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP,
+    deleted_at TIMESTAMP,
+    created_by BIGINT REFERENCES users(id)
+);
+
+-- ============================================
+-- POSTS
+-- ============================================
+CREATE TABLE posts (
+    id BIGSERIAL PRIMARY KEY,
+    thread_id BIGINT REFERENCES discussion_threads(id),
+    author_id BIGINT REFERENCES users(id),
+    body TEXT,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP,
+    deleted_at TIMESTAMP
+);
+
+CREATE INDEX idx_posts_thread ON posts(thread_id, created_at);
+
+-- ============================================
+-- NOTIFICATIONS
+-- ============================================
+CREATE TABLE notifications (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT REFERENCES users(id),
+    type VARCHAR(20) CHECK (type IN ('system','course','assignment','message')),
+    message TEXT,
+    is_read BOOLEAN,
+    created_at TIMESTAMP,
+    deleted_at TIMESTAMP
+);
+
+-- ============================================
+-- PAYMENTS
+-- ============================================
+CREATE TABLE payments (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT REFERENCES users(id),
+    course_id BIGINT REFERENCES courses(id),
+    amount DECIMAL,
+    currency VARCHAR(20),
+    status VARCHAR(20) CHECK (status IN ('pending','completed','failed','refunded')),
+    payment_date TIMESTAMP,
+    provider VARCHAR(50),
+    transaction_id VARCHAR(255),
+    created_at TIMESTAMP,
+    deleted_at TIMESTAMP
+);
+
+-- ============================================
+-- ANALYTICS EVENTS
+-- ============================================
+CREATE TABLE analytics_events (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT REFERENCES users(id),
+    event_type VARCHAR(50),
+    event_data JSONB,
+    created_at TIMESTAMP
+);
+
+CREATE INDEX idx_analytics_event ON analytics_events(event_type, created_at);
+
+-- ============================================
+-- USER RELATIONSHIPS
+-- ============================================
+CREATE TABLE user_relationships (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT REFERENCES users(id),
+    related_user_id BIGINT REFERENCES users(id),
+    relationship_type VARCHAR(20) CHECK (relationship_type IN ('follower','following','blocked','colleague')),
+    created_at TIMESTAMP,
+    UNIQUE (user_id, related_user_id)
+);
+ 

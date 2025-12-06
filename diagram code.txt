@@ -1,0 +1,278 @@
+// USERS & AUTH
+users [icon: user, color: blue] {
+  id string pk
+  name string
+  email string unique
+  passwordHash string
+  role string // student, instructor, admin
+  isActive boolean
+  createdAt timestamp
+}
+
+sessions [icon: lock, color: purple] {
+  id string pk
+  userId string fk
+  token string unique
+  ipAddress string
+  userAgent string
+  isValid boolean
+  createdAt timestamp
+  expiresAt timestamp
+}
+
+password_resets [icon: refresh-ccw, color: orange] {
+  id string pk
+  userId string fk
+  resetToken string unique
+  expiresAt timestamp
+  used boolean
+  createdAt timestamp
+}
+
+activity_logs [icon: activity, color: green] {
+  id string pk
+  userId string fk
+  action string // login, logout, failed_login
+  ipAddress string
+  meta json
+  createdAt timestamp
+}
+
+// UNIVERSITY
+universities [icon: school, color: teal] {
+  id string pk
+  name string
+  country string
+  rankingPoints int
+  createdAt timestamp
+}
+
+// UNIVERSITY TEAMS
+university_teams [icon: users, color: purple] {
+  id string pk
+  competitionId string fk
+  universityId string fk
+  teamNumber int
+  createdAt timestamp
+}
+
+university_team_members [icon: user-plus, color: blue] {
+  id string pk
+  universityTeamId string fk
+  userId string fk
+  role string // leader, member
+  joinedAt timestamp
+}
+
+// COURSES & LESSONS
+courses [icon: book-open, color: yellow] {
+  id string pk
+  title string
+  description text
+  teacherId string fk
+  isPublic boolean
+  price decimal
+  certificateAvailable boolean
+  createdAt timestamp
+}
+
+lessons [icon: file-text, color: pink] {
+  id string pk
+  courseId string fk
+  title string
+  contentUrl string
+  createdAt timestamp
+}
+
+quizzes [icon: help-circle, color: red] {
+  id string pk
+  lessonId string fk
+  questions json
+  createdByAI boolean
+  createdAt timestamp
+}
+
+certificates [icon: award, color: gold] {
+  id string pk
+  userId string fk
+  courseId string fk
+  issueDate timestamp
+}
+
+// COMMUNITY
+comments [icon: message-square, color: cyan] {
+  id string pk
+  lessonId string fk
+  userId string fk
+  content text
+  createdAt timestamp
+}
+
+ratings [icon: star, color: amber] {
+  id string pk
+  lessonId string fk
+  userId string fk
+  stars int
+  createdAt timestamp
+}
+
+groups [icon: users, color: indigo] {
+  id string pk
+  name string
+  isPrivate boolean
+  createdBy string fk
+  createdAt timestamp
+}
+
+group_members [icon: user-check, color: lime] {
+  id string pk
+  groupId string fk
+  userId string fk
+  joinedAt timestamp
+}
+
+// COMPETITIONS
+competitions [icon: trophy, color: red] {
+  id string pk
+  title string
+  type string // university, national, global, clan, icpc_style
+  hostUniversityId string fk
+  startDate timestamp
+  endDate timestamp
+  prize string
+  isOfficial boolean
+}
+
+teams [icon: users, color: purple] {
+  id string pk
+  competitionId string fk
+  name string
+  xpRequirement int
+}
+
+team_members [icon: user-plus, color: blue] {
+  id string pk
+  teamId string fk
+  userId string fk
+  role string // leader, member
+}
+
+// CLANS & SEASONS
+clans [icon: shield, color: green] {
+  id string pk
+  name string
+  leaderId string fk
+  xpPoints int
+  seasonId string fk
+}
+
+seasons [icon: calendar, color: orange] {
+  id string pk
+  name string
+  startDate timestamp
+  endDate timestamp
+}
+
+// LEADERBOARD SYSTEM
+leaderboards [icon: bar-chart, color: indigo] {
+  id string pk
+  type string // global, university, clan
+  referenceId string fk
+  userId string fk nullable
+  points int
+  rank int
+  updatedAt timestamp
+}
+
+// TEAM ALLOCATION RULES
+team_allocation_rules [icon: settings, color: gray] {
+  id string pk
+  minRankingPoints int
+  maxRankingPoints int
+  allowedTeams int
+  createdAt timestamp
+}
+
+// COMPETITION ROUNDS (ICPC-style)
+competition_rounds [icon: repeat, color: orange] {
+  id string pk
+  competitionId string fk
+  roundName string // regional, national, global
+  startDate timestamp
+  endDate timestamp
+}
+
+// NOTIFICATIONS
+notifications [icon: bell, color: pink] {
+  id string pk
+  userId string fk
+  type string // competition_update, course_update, badge_award
+  message text
+  isRead boolean
+  createdAt timestamp
+}
+
+// PAYMENTS / SUBSCRIPTIONS
+payments [icon: credit-card, color: green] {
+  id string pk
+  userId string fk
+  amount decimal
+  method string // card, mobile_banking
+  status string // pending, completed, failed
+  createdAt timestamp
+}
+
+subscriptions [icon: tag, color: blue] {
+  id string pk
+  userId string fk
+  type string // free, premium
+  startDate timestamp
+  endDate timestamp
+  isActive boolean
+}
+
+// CALENDAR
+event_calendar [icon: calendar, color: pink] {
+  id string pk
+  competitionId string fk
+  title string
+  date timestamp
+  description text
+}
+
+// RELATIONS
+sessions.userId > users.id
+password_resets.userId > users.id
+activity_logs.userId > users.id
+users.universityId > universities.id
+courses.teacherId > users.id
+lessons.courseId > courses.id
+quizzes.lessonId > lessons.id
+certificates.userId > users.id
+certificates.courseId > courses.id
+comments.lessonId > lessons.id
+comments.userId > users.id
+ratings.lessonId > lessons.id
+ratings.userId > users.id
+groups.createdBy > users.id
+group_members.groupId > groups.id
+group_members.userId > users.id
+competitions.hostUniversityId > universities.id
+teams.competitionId > competitions.id
+team_members.teamId > teams.id
+team_members.userId > users.id
+clans.leaderId > users.id
+clans.seasonId > seasons.id
+event_calendar.competitionId > competitions.id
+universities.id > university_teams.universityId
+competitions.id > university_teams.competitionId
+university_teams.id > university_team_members.universityTeamId
+users.id > university_team_members.userId
+leaderboards.referenceId > universities.id
+leaderboards.referenceId > clans.id
+leaderboards.userId > users.id
+competition_rounds.competitionId > competitions.id
+notifications.userId > users.id
+payments.userId > users.id
+subscriptions.userId > users.id
+
